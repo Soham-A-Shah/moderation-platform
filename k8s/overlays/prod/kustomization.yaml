@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - ingress.yaml
+  - hpa.yaml
+
+images:
+  - name: api-gateway
+    newName: REPLACE_WITH_ECR/api-gateway
+    newTag: v1.0.0
+  - name: frontend
+    newName: REPLACE_WITH_ECR/frontend
+    newTag: v1.0.0
+  - name: ingestion-service
+    newName: REPLACE_WITH_ECR/ingestion-service
+    newTag: v1.0.0
+  - name: ml-inference-service
+    newName: REPLACE_WITH_ECR/ml-inference-service
+    newTag: v1.0.0
+  - name: moderation-service
+    newName: REPLACE_WITH_ECR/moderation-service
+    newTag: v1.0.0
+  - name: notification-service
+    newName: REPLACE_WITH_ECR/notification-service
+    newTag: v1.0.0
+  - name: analytics-service
+    newName: REPLACE_WITH_ECR/analytics-service
+    newTag: v1.0.0
+
+replicas:
+  - name: api-gateway
+    count: 2
+  - name: ingestion-service
+    count: 2
+  - name: ml-inference-service
+    count: 2
+  - name: moderation-service
+    count: 2

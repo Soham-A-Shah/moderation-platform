@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-inference-service
+  namespace: moderation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-inference-service
+  template:
+    metadata:
+      labels:
+        app: ml-inference-service
+    spec:
+      containers:
+        - name: ml-inference-service
+          image: ml-inference-service:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 400m
+              memory: 384Mi
