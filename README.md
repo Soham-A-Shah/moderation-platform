@@ -152,35 +152,6 @@ Delete the local cluster:
 ./scripts/k8s-down.sh
 ```
 
-## Kubernetes layout
-
-```text
-k8s/
-├── base/
-│   ├── namespace.yaml
-│   ├── configmap.yaml
-│   ├── secret.yaml
-│   ├── postgres/
-│   ├── redpanda/
-│   ├── kafka-ui/
-│   ├── frontend/
-│   ├── api-gateway/
-│   ├── ingestion-service/
-│   ├── ml-inference-service/
-│   ├── moderation-service/
-│   ├── notification-service/
-│   ├── analytics-service/
-│   └── kustomization.yaml
-└── overlays/
-    ├── local/
-    │   ├── kustomization.yaml
-    │   └── nodeports.yaml
-    └── prod/
-        ├── kustomization.yaml
-        ├── ingress.yaml
-        └── hpa.yaml
-```
-
 Local deployment:
 
 ```bash
@@ -199,6 +170,3 @@ Delete local resources:
 kubectl delete -k k8s/overlays/local
 ```
 
-## Interview explanation
-
-> I designed the platform around six meaningful services. The Django API Gateway owns authentication, users, and public content APIs. It publishes submitted content to Kafka. Ingestion normalizes the event, the ML service scores it, and the moderation service applies policies and persists the final decision and audit record. Notification and analytics services independently consume moderation results. Each processing stage can scale independently, events are replayable, and failures are isolated from the synchronous API path.
