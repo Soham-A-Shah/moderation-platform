@@ -13,6 +13,17 @@ spec:
       labels:
         app: api-gateway
     spec:
+      initContainers:
+        - name: api-gateway-migrate
+          image: api-gateway:latest
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "migrate.sh"]
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+
       containers:
         - name: api-gateway
           image: api-gateway:latest

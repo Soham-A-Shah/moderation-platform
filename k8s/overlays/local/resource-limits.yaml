@@ -1,0 +1,193 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: moderation
+spec:
+  template:
+    spec:
+      containers:
+        - name: api-gateway
+          resources:
+            requests:
+              cpu: 25m
+              memory: 96Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: moderation
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingestion-service
+  namespace: moderation
+spec:
+  template:
+    spec:
+      containers:
+        - name: ingestion-service
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 192Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-inference-service
+  namespace: moderation
+spec:
+  template:
+    spec:
+      containers:
+        - name: ml-inference-service
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 192Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moderation-service
+  namespace: moderation
+spec:
+  template:
+    spec:
+      containers:
+        - name: moderation-service
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 192Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: moderation
+spec:
+  template:
+    spec:
+      containers:
+        - name: notification-service
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 192Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: moderation
+spec:
+  template:
+    spec:
+      containers:
+        - name: analytics-service
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 192Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui
+  namespace: moderation
+spec:
+  template:
+    spec:
+      containers:
+        - name: kafka-ui
+          env:
+            - name: JAVA_OPTS
+              value: "-Xms64m -Xmx256m"
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              cpu: 400m
+              memory: 384Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: moderation
+spec:
+  template:
+    spec:
+      containers:
+        - name: postgres
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 400m
+              memory: 384Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redpanda
+  namespace: moderation
+spec:
+  template:
+    spec:
+      containers:
+        - name: redpanda
+          args:
+            - redpanda
+            - start
+            - --overprovisioned
+            - --smp=1
+            - --memory=256M
+            - --reserve-memory=0M
+            - --node-id=0
+            - --check=false
+            - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+            - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 600m
+              memory: 512Mi

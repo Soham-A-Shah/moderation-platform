@@ -6,6 +6,7 @@ resources:
 
 patches:
   - path: nodeports.yaml
+  - path: resource-limits.yaml
 
 images:
   - name: api-gateway

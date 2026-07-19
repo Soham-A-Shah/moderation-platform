@@ -107,7 +107,7 @@ curl http://localhost:8010/api/content/<content-id>/
 Install tools:
 
 ```bash
-brew install kind kubectl
+brew install kind kubectl skaffold
 ```
 
 Start the local cluster and application:
@@ -132,6 +132,16 @@ Frontend: http://localhost:3000
 API:      http://localhost:8010/api/content/
 Kafka UI: http://localhost:8080
 ```
+
+For automatic rebuild and redeploy while Kubernetes is running:
+
+```bash
+./scripts/k8s-dev.sh
+```
+
+This starts Skaffold in watch mode. When frontend, backend, or shared `common`
+code changes, Skaffold rebuilds the affected image, loads it into Kind, updates
+the running deployment, and streams logs.
 
 Check status:
 
@@ -169,4 +179,3 @@ Delete local resources:
 ```bash
 kubectl delete -k k8s/overlays/local
 ```
-

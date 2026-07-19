@@ -1,13 +1,17 @@
-import json
 import uuid
 
 import psycopg2
 from django.conf import settings
+from django.contrib.auth import login, logout
+from django.middleware.csrf import get_token
 from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from moderation_common.events import EventProducer
+
+from .serializers import LoginSerializer, RegisterSerializer
 
 
 def connection():
@@ -22,24 +26,109 @@ def connection():
 
 
 class HealthView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def get(self, request):
         return Response({"status": "ok", "service": "api-gateway"})
 
 
-class ContentCollectionView(APIView):
+def user_response(user):
+    return {
+        "id": user.id,
+        "username": user.get_username(),
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "is_staff": user.is_staff,
+    }
+
+
+class CsrfTokenView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def get(self, request):
+        return Response({"csrf_token": get_token(request._request)})
+
+
+class RegisterView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        login(request._request, user)
+
+        return Response(
+            {
+                "user": user_response(user),
+                "csrf_token": get_token(request._request),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class LoginView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = LoginSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+
+        login(request._request, user)
+
+        return Response(
+            {
+                "user": user_response(user),
+                "csrf_token": get_token(request._request),
+            },
+        )
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        logout(request._request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"user": user_response(request.user)})
+
+
+class ContentCollectionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query = '''
+            SELECT id, user_id, original_text, status, final_decision,
+                   scores, reason, created_at, updated_at
+            FROM content_items
+        '''
+        params = []
+
+        if not request.user.is_staff:
+            query += " WHERE user_id = %s"
+            params.append(request.user.get_username())
+
+        query += " ORDER BY created_at DESC LIMIT 50"
+
         conn = connection()
         try:
             with conn.cursor() as cursor:
-                cursor.execute(
-                    '''
-                    SELECT id, user_id, original_text, status, final_decision,
-                           scores, reason, created_at, updated_at
-                    FROM content_items
-                    ORDER BY created_at DESC
-                    LIMIT 50
-                    '''
-                )
+                cursor.execute(query, params)
                 rows = cursor.fetchall()
                 return Response(
                     [
@@ -61,7 +150,7 @@ class ContentCollectionView(APIView):
             conn.close()
 
     def post(self, request):
-        user_id = request.data.get("user_id", "anonymous")
+        user_id = request.user.get_username()
         text = request.data.get("text", "").strip()
 
         if not text:
@@ -109,6 +198,8 @@ class ContentCollectionView(APIView):
 
 
 class ContentDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, content_id):
         conn = connection()
         try:
@@ -128,6 +219,12 @@ class ContentDetailView(APIView):
                     return Response(
                         {"detail": "content not found"},
                         status=status.HTTP_404_NOT_FOUND,
+                    )
+
+                if not request.user.is_staff and row[1] != request.user.get_username():
+                    return Response(
+                        {"detail": "You do not have permission to view this content."},
+                        status=status.HTTP_403_FORBIDDEN,
                     )
 
                 return Response(

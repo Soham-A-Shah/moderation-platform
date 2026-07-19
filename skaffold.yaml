@@ -1,0 +1,42 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: content-moderation-platform
+build:
+  local:
+    push: false
+  artifacts:
+    - image: api-gateway
+      context: .
+      docker:
+        dockerfile: backend/api-gateway/Dockerfile
+    - image: ingestion-service
+      context: .
+      docker:
+        dockerfile: backend/services/ingestion-service/Dockerfile
+    - image: ml-inference-service
+      context: .
+      docker:
+        dockerfile: backend/services/ml-inference-service/Dockerfile
+    - image: moderation-service
+      context: .
+      docker:
+        dockerfile: backend/services/moderation-service/Dockerfile
+    - image: notification-service
+      context: .
+      docker:
+        dockerfile: backend/services/notification-service/Dockerfile
+    - image: analytics-service
+      context: .
+      docker:
+        dockerfile: backend/services/analytics-service/Dockerfile
+    - image: frontend
+      context: .
+      docker:
+        dockerfile: frontend/Dockerfile
+manifests:
+  kustomize:
+    paths:
+      - k8s/overlays/local
+deploy:
+  kubectl: {}

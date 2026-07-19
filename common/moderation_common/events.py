@@ -4,7 +4,18 @@ import time
 import uuid
 from typing import Any, Callable
 
-from confluent_kafka import Consumer, KafkaException, Producer
+from confluent_kafka import Consumer, KafkaError, Producer
+
+TRANSIENT_KAFKA_ERROR_CODES = {
+    code
+    for code in (
+        getattr(KafkaError, "UNKNOWN_TOPIC_OR_PART", None),
+        getattr(KafkaError, "LEADER_NOT_AVAILABLE", None),
+        getattr(KafkaError, "_ALL_BROKERS_DOWN", None),
+        getattr(KafkaError, "_TRANSPORT", None),
+    )
+    if code is not None
+}
 
 
 def bootstrap_servers() -> str:
@@ -60,7 +71,17 @@ def consume_forever(
             if message is None:
                 continue
             if message.error():
-                raise KafkaException(message.error())
+                error = message.error()
+                if error.code() in TRANSIENT_KAFKA_ERROR_CODES:
+                    print(
+                        f"[{service_name}] waiting for kafka topic={topic}: {error}",
+                        flush=True,
+                    )
+                    time.sleep(2)
+                    continue
+
+                print(f"[{service_name}] kafka error: {error}", flush=True)
+                continue
 
             event = json.loads(message.value().decode("utf-8"))
 
